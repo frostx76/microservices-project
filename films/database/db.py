@@ -4,7 +4,7 @@ import os
 from sqlalchemy.exc import OperationalError
 import time
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin@postgres:5432/kinopoisk")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin@postgres:8001/kinopoisk")
 engine = create_engine(DATABASE_URL)
 
 def wait_for_db():
