@@ -100,7 +100,7 @@ async def list_users(
     Параметры:
      - skip: сколько записей пропустить (обязательно)
      - limit: сколько записей вернуть (обязательно)
-     - is_active: True/False (обязательно)
+     - is_active: Bool/None (опционально)
     """
     query = select(User)
 
