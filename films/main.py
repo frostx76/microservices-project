@@ -18,16 +18,16 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Запуск сервиса фильмов...")
+    logger.info("Launching the movie service...")
     wait_for_db()
-    logger.info("Сервис готов к работе")
+    logger.info("The service is ready to work")
 
 
 @app.post("/films",
           response_model=Film,
           status_code=status.HTTP_201_CREATED,
-          summary="Добавить новый фильм",
-          response_description="Данные созданного фильма")
+          summary="Add a new movie",
+          response_description="The data of the created movie")
 async def create_film(film: Film, session: Session = Depends(get_session)):
     """
     Добавляет фильм в DB
@@ -42,34 +42,34 @@ async def create_film(film: Film, session: Session = Depends(get_session)):
         session.add(film)
         session.commit()
         session.refresh(film)
-        logger.info(f"Добавлен новый фильм: ID {film.id}, {film.title}")
+        logger.info(f"A new movie has been added: ID {film.id}, {film.title}")
         return film
     except Exception as e:
         session.rollback()
-        logger.error(f"Ошибка при добавлении фильма: {str(e)}")
+        logger.error(f"Error when adding a movie: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Не удалось добавить фильм"
+            detail="Couldn't add a movie"
         )
 
 
 @app.get("/films",
          response_model=List[Film],
-         summary="Получить список всех фильмов")
+         summary="Get a list of all movies")
 async def read_films(session: Session = Depends(get_session)):
     """
     Возвращает все фильмы в DB
     """
     films = session.exec(select(Film)).all()
-    logger.info(f"Запрошен список фильмов, найдено {len(films)} записей")
+    logger.info(f"A list of films was requested, {len(films)} entries were found")
     return films
 
 
 @app.get("/films/{film_id}",
          response_model=Film,
-         summary="Получить фильм по ID",
+         summary="Get a movie by ID",
          responses={
-             404: {"description": "Фильм не найден"}
+             404: {"description": "The movie was not found"}
          })
 async def read_film(film_id: int, session: Session = Depends(get_session)):
     """
@@ -80,20 +80,20 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
     """
     film = session.get(Film, film_id)
     if not film:
-        logger.warning(f"Запрошен несуществующий фильм ID {film_id}")
+        logger.warning(f"A non-existent movie ID was requested {film_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Фильм не найден"
+            detail="The movie was not found"
         )
-    logger.info(f"Запрошен фильм ID {film_id}: {film.title}")
+    logger.info(f"Movie ID requested{film_id}: {film.title}")
     return film
 
 
 @app.put("/films/{film_id}",
          response_model=Film,
-         summary="Обновить данные фильма",
+         summary="Update movie data",
          responses={
-             404: {"description": "Фильм не найден"}
+             404: {"description": "The movie was not found"}
          })
 async def update_film(
         film_id: int,
@@ -109,10 +109,10 @@ async def update_film(
     """
     film = session.get(Film, film_id)
     if not film:
-        logger.warning(f"Попытка обновить несуществующий фильм ID {film_id}")
+        logger.warning(f"Attempt to update a non-existent movie ID {film_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Фильм не найден"
+            detail="The movie was not found"
         )
 
     update_data = film_data.dict(exclude_unset=True)
@@ -123,16 +123,16 @@ async def update_film(
     session.commit()
     session.refresh(film)
 
-    logger.info(f"Обновлен фильм ID {film_id}: {film.title}")
+    logger.info(f"Updated movie ID {film_id}: {film.title}")
     return film
 
 
 @app.delete("/films/{film_id}",
             status_code=status.HTTP_204_NO_CONTENT,
-            summary="Удалить фильм",
+            summary="Delete a movie",
             responses={
-                404: {"description": "Фильм не найден"},
-                200: {"description": "Фильм успешно удален"}
+                404: {"description": "The movie was not found"},
+                200: {"description": "The movie was deleted successfully"}
             })
 async def delete_film(film_id: int, session: Session = Depends(get_session)):
     """
@@ -143,17 +143,17 @@ async def delete_film(film_id: int, session: Session = Depends(get_session)):
     """
     film = session.get(Film, film_id)
     if not film:
-        logger.warning(f"Попытка удалить несуществующий фильм ID {film_id}")
+        logger.warning(f"Attempt to delete a non-existent movie ID {film_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Фильм не найден"
+            detail="The movie was not found"
         )
 
     session.delete(film)
     session.commit()
 
-    logger.info(f"Удален фильм ID {film_id}: {film.title}")
+    logger.info(f"Deleted movie ID {film_id}: {film.title}")
     return JSONResponse(
-        content={"detail": "Фильм успешно удален"},
+        content={"detail": "The movie was deleted successfully"},
         status_code=status.HTTP_200_OK
     )
