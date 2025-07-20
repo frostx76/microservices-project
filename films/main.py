@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Фильмотека API",
-    description="API для управления базой данных фильмов",
+    title="Films Service",
+    description="API for managing films list",
     version="1.0.0"
 )
 
