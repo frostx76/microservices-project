@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import os
 from typing import Optional
-from models.auth import User
+from models.authorization import User
 from database.db import get_session, wait_for_db
 import logging
 
