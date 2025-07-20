@@ -28,7 +28,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 @app.on_event("startup")
 async def startup_event():
-    """Инициализация сервиса"""
     logger.info("Starting auth service...")
     wait_for_db()
     logger.info("Service ready")
