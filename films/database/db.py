@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy import inspect
 from sqlalchemy import text
 import time
 import logging
@@ -27,7 +28,8 @@ def wait_for_db():
             with Session(engine) as session:
                 result = session.execute(text("SELECT version()")).first()
                 logger.info(f"Connected to PostgreSQL: {result[0]}")
-                if not engine.dialect.has_table(engine, "film"):
+                inspector = inspect(engine)
+                if not inspector.has_table("film"):
                     SQLModel.metadata.create_all(engine)
                     logger.info("Database tables created")
                 return
