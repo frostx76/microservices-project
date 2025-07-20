@@ -30,7 +30,7 @@ async def startup_event():
           response_description="The data of the created movie")
 async def create_film(film: Film, session: Session = Depends(get_session)):
     """
-    Добавляет фильм в DB
+    Добавление фильма в DB
 
     Параметры:
      - title: название фильма (обязательно)
@@ -58,7 +58,7 @@ async def create_film(film: Film, session: Session = Depends(get_session)):
          summary="Get a list of all movies")
 async def read_films(session: Session = Depends(get_session)):
     """
-    Возвращает все фильмы в DB
+    Получение всех фильмов в DB
     """
     films = session.exec(select(Film)).all()
     logger.info(f"A list of films was requested, {len(films)} entries were found")
@@ -73,7 +73,7 @@ async def read_films(session: Session = Depends(get_session)):
          })
 async def read_film(film_id: int, session: Session = Depends(get_session)):
     """
-    Возвращает данные о фильме по ID
+    Получение данных о фильме по ID
 
     Параметры:
      - film_id: ID фильма (обязательно)
@@ -101,11 +101,11 @@ async def update_film(
         session: Session = Depends(get_session)
 ):
     """
-    Обновляет информацию о фильме
+    Обновление информацию о фильме
 
     Параметры:
      - film_id: ID фильма (обязательно)
-     - film_data: новая информация
+     - film_data: новая информация (опционально)
     """
     film = session.get(Film, film_id)
     if not film:
@@ -136,7 +136,7 @@ async def update_film(
             })
 async def delete_film(film_id: int, session: Session = Depends(get_session)):
     """
-    Удаляет фильм
+    Удаление фильма
 
     Параметры:
      - film_id: ID фильма (обязательно)
