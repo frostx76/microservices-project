@@ -28,6 +28,8 @@ services:
     ports:
       - "8000:8000"
     restart: on-failure
+    networks:
+      - kinopoisk-net
 
   auth:
     build: ./authorization
@@ -39,6 +41,8 @@ services:
     ports:
       - "8001:8001"
     restart: on-failure
+    networks:
+      - kinopoisk-net
 
   reviews:
     build: ./reviews
@@ -50,6 +54,8 @@ services:
     ports:
       - "8002:8002"
     restart: on-failure
+    networks:
+      - kinopoisk-net
 
   users:
     build: ./users
@@ -61,6 +67,12 @@ services:
     ports:
       - "8003:8003"
     restart: on-failure
+    networks:
+      - kinopoisk-net
+
+networks:
+  kinopoisk-net:
+    driver: bridge
 
 volumes:
   postgres_data:

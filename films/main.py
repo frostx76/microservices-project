@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer
 from sqlmodel import select, Session
 from typing import List
-from modul.models.films import Film
-from database.db import get_session, wait_for_db
+from .. modul.models.films import Film
+from .. modul.db import get_session, wait_for_db
+from authorization.main import get_current_user as get_auth_user
 import logging
+import httpx
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,6 +17,18 @@ app = FastAPI(
     description="API for managing films list",
     version="1.0.0"
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
+
+REVIEWS_SERVICE_URL = "http://reviews:8002"
 
 
 @app.on_event("startup")
@@ -28,15 +43,13 @@ async def startup_event():
           status_code=status.HTTP_201_CREATED,
           summary="Add a new movie",
           response_description="The data of the created movie")
-async def create_film(film: Film, session: Session = Depends(get_session)):
+async def create_film(
+        film: Film,
+        session: Session = Depends(get_session),
+        auth_user=Depends(get_auth_user)
+):
     """
     Добавление фильма в DB
-
-    Параметры:
-     - title: название фильма (обязательно)
-     - director: режиссер (обязательно)
-     - year: год выпуска (year > 1900)
-     - rating: рейтинг (0 > rating > 10)
     """
     try:
         session.add(film)
@@ -74,9 +87,6 @@ async def read_films(session: Session = Depends(get_session)):
 async def read_film(film_id: int, session: Session = Depends(get_session)):
     """
     Получение данных о фильме по ID
-
-    Параметры:
-     - film_id: ID фильма (обязательно)
     """
     film = session.get(Film, film_id)
     if not film:
@@ -89,6 +99,29 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
     return film
 
 
+@app.get("/films/{film_id}/reviews",
+         summary="Get film reviews")
+async def get_film_reviews(film_id: int):
+    """Получение всех отзывов о фильме"""
+    async with httpx.AsyncClient() as client:
+        # Проверка существования фильма
+        film_response = await client.get(f"http://films:8000/films/{film_id}")
+        if film_response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Film not found"
+            )
+
+        # Получение отзывов
+        reviews_response = await client.get(f"{REVIEWS_SERVICE_URL}/reviews?film_id={film_id}")
+        if reviews_response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to get film reviews"
+            )
+        return reviews_response.json()
+
+
 @app.put("/films/{film_id}",
          response_model=Film,
          summary="Update movie data",
@@ -98,14 +131,11 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
 async def update_film(
         film_id: int,
         film_data: Film,
-        session: Session = Depends(get_session)
+        session: Session = Depends(get_session),
+        auth_user=Depends(get_auth_user)
 ):
     """
     Обновление информацию о фильме
-
-    Параметры:
-     - film_id: ID фильма (обязательно)
-     - film_data: новая информация (опционально)
     """
     film = session.get(Film, film_id)
     if not film:
@@ -131,15 +161,15 @@ async def update_film(
             status_code=status.HTTP_204_NO_CONTENT,
             summary="Delete a movie",
             responses={
-                404: {"description": "The movie was not found"},
-                200: {"description": "The movie was deleted successfully"}
+                404: {"description": "The movie was not found"}
             })
-async def delete_film(film_id: int, session: Session = Depends(get_session)):
+async def delete_film(
+        film_id: int,
+        session: Session = Depends(get_session),
+        auth_user=Depends(get_auth_user)
+):
     """
     Удаление фильма
-
-    Параметры:
-     - film_id: ID фильма (обязательно)
     """
     film = session.get(Film, film_id)
     if not film:
@@ -153,7 +183,4 @@ async def delete_film(film_id: int, session: Session = Depends(get_session)):
     session.commit()
 
     logger.info(f"Deleted movie ID {film_id}: {film.title}")
-    return JSONResponse(
-        content={"detail": "The movie was deleted successfully"},
-        status_code=status.HTTP_200_OK
-    )
+    return None
