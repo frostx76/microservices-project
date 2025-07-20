@@ -21,7 +21,7 @@ def startup():
 
 @app.post("/reviews", status_code=status.HTTP_201_CREATED)
 def create_review(review: Review, session: Session = Depends(get_session)):
-    """Добавить отзыв"""
+    """Добавление отзыва"""
     try:
         session.add(review)
         session.commit()
@@ -34,7 +34,7 @@ def create_review(review: Review, session: Session = Depends(get_session)):
 
 @app.get("/reviews", response_model=List[Review])
 def get_reviews(film_id: int = None, session: Session = Depends(get_session)):
-    """Получить все отзывы"""
+    """Получение всех отзывов"""
     query = select(Review)
     if film_id:
         query = query.where(Review.film_id == film_id)
@@ -42,7 +42,7 @@ def get_reviews(film_id: int = None, session: Session = Depends(get_session)):
 
 @app.get("/reviews/{review_id}", response_model=Review)
 def get_review(review_id: int, session: Session = Depends(get_session)):
-    """Получить отзыв по ID"""
+    """Получение отзыва по ID"""
     review = session.get(Review, review_id)
     if not review:
         raise HTTPException(404, detail="Review not found")
@@ -50,7 +50,7 @@ def get_review(review_id: int, session: Session = Depends(get_session)):
 
 @app.delete("/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_review(review_id: int, session: Session = Depends(get_session)):
-    """Удалить отзыв"""
+    """Удаление отзыва"""
     review = session.get(Review, review_id)
     if not review:
         raise HTTPException(404, detail="Review not found")

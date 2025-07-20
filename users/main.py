@@ -95,7 +95,7 @@ async def list_users(
         session: Session = Depends(get_session)
 ):
     """
-    Получить список пользователей по фильтру
+    Получение список пользователей по фильтру
 
     Параметры:
      - skip: сколько записей пропустить (обязательно)
@@ -126,7 +126,7 @@ async def update_user_partially(
         session: Session = Depends(get_session)
 ):
     """
-    Обновить информацию о пользователе
+    Обновление информацию о пользователе
 
     Поддерживает все опциональные поля о себе
     """
@@ -155,7 +155,7 @@ async def update_user_partially(
                 404: {"description": "User not found"}
             })
 async def delete_user(user_id: int, session: Session = Depends(get_session)):
-    """Удалить пользователя по ID """
+    """Удаление пользователя по ID """
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
