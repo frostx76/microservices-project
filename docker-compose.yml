@@ -12,10 +12,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d kinopoisk"]
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: on-failure
 
   films:
     build: ./films
@@ -26,6 +27,7 @@ services:
       DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
     ports:
       - "8000:8000"
+    restart: on-failure
 
   auth:
     build: ./auth
@@ -36,6 +38,7 @@ services:
       DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
     ports:
       - "8001:8001"
+    restart: on-failure
 
   reviews:
     build: ./reviews
@@ -46,6 +49,7 @@ services:
       DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
     ports:
       - "8002:8002"
+    restart: on-failure
 
   users:
     build: ./users
@@ -56,6 +60,7 @@ services:
       DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
     ports:
       - "8003:8003"
+    restart: on-failure
 
 volumes:
   postgres_data:
