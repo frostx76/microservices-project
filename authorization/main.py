@@ -6,8 +6,8 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import os
 from typing import Optional
-from models.authorization import User
-from database.db import get_session, wait_for_db
+from modul.models.authorization import User
+from modul.db import get_session, wait_for_db
 import logging
 
 logging.basicConfig(level=logging.INFO)

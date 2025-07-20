@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlmodel import select, Session
 from typing import List
-from models.films import Film
+from modul.models.films import Film
 from database.db import get_session, wait_for_db
 import logging
 

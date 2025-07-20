@@ -1,9 +1,8 @@
 from sqlmodel import SQLModel, Field
 from datetime import date
 
-
 class User(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)  # id из auth
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
     full_name: str | None = None
     is_active: bool = True

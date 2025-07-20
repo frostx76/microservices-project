@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlmodel import select, Session
 from typing import List
-from models.reviews import Review
+from modul.models.reviews import Review
 from database.db import get_session, wait_for_db
 import logging
 

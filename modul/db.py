@@ -1,10 +1,9 @@
 from sqlmodel import SQLModel, create_engine, Session
-from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import inspect
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 import time
 import logging
 import os
+from models import Film, AuthUser, ProfileUser, Review
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +15,6 @@ engine = create_engine(
     connect_args={"connect_timeout": 10},
     echo=True
 )
-
 
 def wait_for_db():
     max_retries = 10
@@ -31,14 +29,13 @@ def wait_for_db():
                 inspector = inspect(engine)
                 if not inspector.has_table("film"):
                     SQLModel.metadata.create_all(engine)
-                    logger.info("Database tables created")
+                    logger.info("All database tables created")
                 return
         except Exception as e:
             logger.error(f"Connection failed: {type(e).__name__}: {str(e)}")
             if attempt == max_retries:
                 raise RuntimeError(f"Failed to connect to DB after {max_retries} attempts")
             time.sleep(retry_delay)
-
 
 def get_session():
     with Session(engine) as session:

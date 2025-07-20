@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlmodel import select, Session
 from typing import List, Optional
-from datetime import date
-from models.users import User
+from modul.models.users import User
 from database.db import wait_for_db, get_session
 import logging
 
