@@ -2,9 +2,10 @@ from sqlmodel import SQLModel, create_engine, Session
 from fastapi import Depends
 import os
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
 import time
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin@postgres:8001/kinopoisk")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin@postgres:5432/kinopoisk")
 engine = create_engine(DATABASE_URL)
 
 def wait_for_db():
@@ -12,7 +13,7 @@ def wait_for_db():
     while retries:
         try:
             with Session(engine) as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             SQLModel.metadata.create_all(engine)
             return
         except OperationalError:

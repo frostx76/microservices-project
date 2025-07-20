@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field
 
 class Film(SQLModel, table=True):
-    id: int or None = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     director: str
     year: int = Field(gt=1900)
