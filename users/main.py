@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="User Management API",
+    title="User management service",
     description="API for managing user profiles",
     version="1.0.0"
 )

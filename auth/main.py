@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Auth Service",
+    title="Authorization service",
     description="API for user authentication and authorization",
     version="1.0.0"
 )

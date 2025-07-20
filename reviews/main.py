@@ -9,8 +9,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Review Service",
-    description="Simple API for film reviews",
+    title="Review service",
+    description="API for film reviews",
     version="1.0.0"
 )
 
