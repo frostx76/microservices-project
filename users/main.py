@@ -30,7 +30,7 @@ async def startup_event():
           response_description="The created user")
 async def create_user(user: User, session: Session = Depends(get_session)):
     """
-    Создание пользователя с информацией
+    Создать пользователя с информацией
 
     Параметры:
      - email: почта (уникальная и обязательно)
