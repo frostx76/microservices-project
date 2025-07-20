@@ -37,25 +37,25 @@ services:
     ports:
       - "8001:8001"
 
-  reviews:
-    build: ./reviews
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
-    ports:
-      - "8002:8002"
-
-  users:
-    build: ./users
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
-    ports:
-      - "8003:8003"
+#  reviews:
+#    build: ./reviews
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+#    ports:
+#      - "8002:8002"
+#
+#  users:
+#    build: ./users
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+#    ports:
+#      - "8003:8003"
 
 volumes:
   postgres_data:
