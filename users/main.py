@@ -34,7 +34,7 @@ async def create_user(
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+        r = await client.post("http://auth-service:8001/verify", json={"token": token})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -115,7 +115,7 @@ async def update_user_partially(
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+        r = await client.post("http://auth-service:8001/verify", json={"token": token})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -149,7 +149,7 @@ async def delete_user(
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+        r = await client.post("http://auth-service:8001/verify", json={"token": token})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 

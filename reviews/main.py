@@ -29,7 +29,7 @@ async def create_review(
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+        r = await client.post("http://auth-service:8001/verify", json={"token": token})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -37,7 +37,7 @@ async def create_review(
     if film_resp.status_code != 200:
         raise HTTPException(status_code=404, detail="Film not found")
 
-    user_resp = await client.get(f"http://users-service:8000/users/{review.user_id}")
+    user_resp = await client.get(f"http://users-service:8003/users/{review.user_id}")
     if user_resp.status_code != 200:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -78,7 +78,7 @@ async def delete_review(
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+        r = await client.post("http://auth-service:8001/verify", json={"token": token})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
