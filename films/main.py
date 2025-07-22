@@ -4,6 +4,7 @@ from sqlmodel import select, Session
 from typing import List
 from models.films import Film
 from database.db import get_session, wait_for_db
+import httpx
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -15,29 +16,27 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
 @app.on_event("startup")
 async def startup_event():
     logger.info("Launching the movie service...")
     wait_for_db()
     logger.info("The service is ready to work")
 
-
 @app.post("/films",
           response_model=Film,
           status_code=status.HTTP_201_CREATED,
           summary="Add a new movie",
           response_description="The data of the created movie")
-async def create_film(film: Film, session: Session = Depends(get_session)):
-    """
-    Добавление фильма в DB
+async def create_film(
+    film: Film,
+    token: str,
+    session: Session = Depends(get_session)
+):
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    Параметры:
-     - title: название фильма (обязательно)
-     - director: режиссер (обязательно)
-     - year: год выпуска (year > 1900)
-     - rating: рейтинг (0 > rating > 10)
-    """
     try:
         session.add(film)
         session.commit()
@@ -52,18 +51,13 @@ async def create_film(film: Film, session: Session = Depends(get_session)):
             detail="Couldn't add a movie"
         )
 
-
 @app.get("/films",
          response_model=List[Film],
          summary="Get a list of all movies")
 async def read_films(session: Session = Depends(get_session)):
-    """
-    Получение всех фильмов в DB
-    """
     films = session.exec(select(Film)).all()
     logger.info(f"A list of films was requested, {len(films)} entries were found")
     return films
-
 
 @app.get("/films/{film_id}",
          response_model=Film,
@@ -72,12 +66,6 @@ async def read_films(session: Session = Depends(get_session)):
              404: {"description": "The movie was not found"}
          })
 async def read_film(film_id: int, session: Session = Depends(get_session)):
-    """
-    Получение данных о фильме по ID
-
-    Параметры:
-     - film_id: ID фильма (обязательно)
-    """
     film = session.get(Film, film_id)
     if not film:
         logger.warning(f"A non-existent movie ID was requested {film_id}")
@@ -88,7 +76,6 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
     logger.info(f"Movie ID requested{film_id}: {film.title}")
     return film
 
-
 @app.put("/films/{film_id}",
          response_model=Film,
          summary="Update movie data",
@@ -98,15 +85,14 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
 async def update_film(
         film_id: int,
         film_data: Film,
+        token: str,
         session: Session = Depends(get_session)
 ):
-    """
-    Обновление информацию о фильме
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    Параметры:
-     - film_id: ID фильма (обязательно)
-     - film_data: новая информация (опционально)
-    """
     film = session.get(Film, film_id)
     if not film:
         logger.warning(f"Attempt to update a non-existent movie ID {film_id}")
@@ -126,7 +112,6 @@ async def update_film(
     logger.info(f"Updated movie ID {film_id}: {film.title}")
     return film
 
-
 @app.delete("/films/{film_id}",
             status_code=status.HTTP_204_NO_CONTENT,
             summary="Delete a movie",
@@ -134,13 +119,16 @@ async def update_film(
                 404: {"description": "The movie was not found"},
                 200: {"description": "The movie was deleted successfully"}
             })
-async def delete_film(film_id: int, session: Session = Depends(get_session)):
-    """
-    Удаление фильма
+async def delete_film(
+        film_id: int,
+        token: str,
+        session: Session = Depends(get_session)
+):
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    Параметры:
-     - film_id: ID фильма (обязательно)
-    """
     film = session.get(Film, film_id)
     if not film:
         logger.warning(f"Attempt to delete a non-existent movie ID {film_id}")

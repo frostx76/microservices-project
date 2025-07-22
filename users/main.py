@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlmodel import select, Session
 from typing import List, Optional
-from datetime import date
 from models.users import User
 from database.db import wait_for_db, get_session
+import httpx
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -15,32 +15,27 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting application...")
     wait_for_db()
     logger.info("Application startup complete")
 
-
 @app.post("/users",
           response_model=User,
           status_code=status.HTTP_201_CREATED,
           summary="Create a new user",
           response_description="The created user")
-async def create_user(user: User, session: Session = Depends(get_session)):
-    """
-    Создание пользователя с информацией
+async def create_user(
+    user: User,
+    token: str,
+    session: Session = Depends(get_session)
+):
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    Параметры:
-     - email: почта (уникальная и обязательно)
-     - full_name: фамилия (опционально)
-     - is_active: True (по умолчанию)
-     - bio: информация о себе (до 500 символов и опционально)
-     - birthdate: дата рождение (опционально)
-     - phone_number: телефон (опционально)
-     - address: место жительства (опционально)
-    """
     try:
         existing_user = session.exec(
             select(User).where(User.email == user.email)
@@ -67,7 +62,6 @@ async def create_user(user: User, session: Session = Depends(get_session)):
             detail="Failed to create user"
         )
 
-
 @app.get("/users/{user_id}",
          response_model=User,
          summary="Get user by ID",
@@ -75,7 +69,6 @@ async def create_user(user: User, session: Session = Depends(get_session)):
              404: {"description": "User not found"}
          })
 async def get_user(user_id: int, session: Session = Depends(get_session)):
-    """Получить 1 пользователя по ID"""
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
@@ -84,24 +77,15 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
         )
     return user
 
-
 @app.get("/users",
          response_model=List[User],
          summary="List all users")
 async def list_users(
-        skip: int = 0,
-        limit: int = 100,
-        is_active: Optional[bool] = None,
-        session: Session = Depends(get_session)
+    skip: int = 0,
+    limit: int = 100,
+    is_active: Optional[bool] = None,
+    session: Session = Depends(get_session)
 ):
-    """
-    Получение список пользователей по фильтру
-
-    Параметры:
-     - skip: сколько записей пропустить (обязательно)
-     - limit: сколько записей вернуть (обязательно)
-     - is_active: Bool/None (опционально)
-    """
     query = select(User)
 
     if is_active is not None:
@@ -113,7 +97,6 @@ async def list_users(
 
     return users
 
-
 @app.patch("/users/{user_id}",
            response_model=User,
            summary="Update user partially",
@@ -121,15 +104,16 @@ async def list_users(
                404: {"description": "User not found"}
            })
 async def update_user_partially(
-        user_id: int,
-        updated_data: User,
-        session: Session = Depends(get_session)
+    user_id: int,
+    updated_data: User,
+    token: str,
+    session: Session = Depends(get_session)
 ):
-    """
-    Обновление информацию о пользователе
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    Поддерживает все опциональные поля о себе
-    """
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
@@ -147,15 +131,22 @@ async def update_user_partially(
 
     return user
 
-
 @app.delete("/users/{user_id}",
             status_code=status.HTTP_204_NO_CONTENT,
             summary="Delete a user",
             responses={
                 404: {"description": "User not found"}
             })
-async def delete_user(user_id: int, session: Session = Depends(get_session)):
-    """Удаление пользователя по ID """
+async def delete_user(
+    user_id: int,
+    token: str,
+    session: Session = Depends(get_session)
+):
+    async with httpx.AsyncClient() as client:
+        r = await client.post("http://auth-service:8000/verify", json={"token": token})
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(

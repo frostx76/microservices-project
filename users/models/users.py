@@ -1,7 +1,6 @@
 from sqlmodel import SQLModel, Field
 from datetime import date
 
-
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)  # id из auth
     email: str = Field(index=True, unique=True)

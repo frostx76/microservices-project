@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import select, Session
 from passlib.context import CryptContext
@@ -32,46 +32,34 @@ async def startup_event():
     wait_for_db()
     logger.info("Service ready")
 
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверка соответствия пароля и хеша"""
     return pwd_context.verify(plain_password, hashed_password)
 
-
 def get_password_hash(password: str) -> str:
-    """Генерация хеша пароля"""
     return pwd_context.hash(password)
 
-
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Создание JWT токена"""
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-
 async def get_user_by_email(session: Session, email: str) -> Optional[User]:
-    """Поиск пользователя по email"""
     result = session.exec(select(User).where(User.email == email))
     return result.first()
 
-
 async def authenticate_user(session: Session, email: str, password: str) -> Optional[User]:
-    """Аутентификация пользователя"""
     user = await get_user_by_email(session, email)
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
 
-
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
-        email: str = Query(..., description="User email"),
-        password: str = Query(..., description="User password"),
+        email: str,
+        password: str,
         session: Session = Depends(get_session)
 ):
-    """Регистрация нового пользователя"""
     existing_user = await get_user_by_email(session, email)
     if existing_user:
         raise HTTPException(
@@ -93,13 +81,11 @@ async def register(
     logger.info(f"New user registered: {user.email}")
     return {"email": user.email, "is_active": user.is_active}
 
-
 @app.post("/token")
 async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         session: Session = Depends(get_session)
 ):
-    """Получение JWT токена для аутентификации"""
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -111,32 +97,10 @@ async def login_for_access_token(
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-async def get_current_user(
-        token: str = Depends(oauth2_scheme),
-        session: Session = Depends(get_session)
-) -> User:
-    """Получение текущего пользователя по JWT токену"""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+@app.post("/verify")
+async def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
+        return {"email": payload.get("sub")}
     except JWTError:
-        raise credentials_exception
-
-    user = await get_user_by_email(session, email)
-    if user is None:
-        raise credentials_exception
-    return user
-
-
-@app.get("/users/me")
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    """Получение информации о текущем пользователе"""
-    return {"email": current_user.email, "is_active": current_user.is_active}
+        raise HTTPException(status_code=401, detail="Invalid token")
