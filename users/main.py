@@ -1,13 +1,9 @@
-import httpx
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer
 from sqlmodel import select, Session
 from typing import List, Optional
 from datetime import date
-from .. modul.models.users import User
-from .. modul.db import get_session, wait_for_db
-from authorization.main import get_current_user as get_auth_user
+from models.users import User
+from database.db import wait_for_db, get_session
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -18,19 +14,6 @@ app = FastAPI(
     description="API for managing user profiles",
     version="1.0.0"
 )
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-security = HTTPBearer()
-
-FILMS_SERVICE_URL = "http://films:8000"
-REVIEWS_SERVICE_URL = "http://reviews:8002"
 
 
 @app.on_event("startup")
@@ -48,6 +31,15 @@ async def startup_event():
 async def create_user(user: User, session: Session = Depends(get_session)):
     """
     Создание пользователя с информацией
+
+    Параметры:
+     - email: почта (уникальная и обязательно)
+     - full_name: фамилия (опционально)
+     - is_active: True (по умолчанию)
+     - bio: информация о себе (до 500 символов и опционально)
+     - birthdate: дата рождение (опционально)
+     - phone_number: телефон (опционально)
+     - address: место жительства (опционально)
     """
     try:
         existing_user = session.exec(
@@ -104,6 +96,11 @@ async def list_users(
 ):
     """
     Получение список пользователей по фильтру
+
+    Параметры:
+     - skip: сколько записей пропустить (обязательно)
+     - limit: сколько записей вернуть (обязательно)
+     - is_active: Bool/None (опционально)
     """
     query = select(User)
 
@@ -126,8 +123,7 @@ async def list_users(
 async def update_user_partially(
         user_id: int,
         updated_data: User,
-        session: Session = Depends(get_session),
-        auth_user=Depends(get_auth_user)
+        session: Session = Depends(get_session)
 ):
     """
     Обновление информацию о пользователе
@@ -158,12 +154,8 @@ async def update_user_partially(
             responses={
                 404: {"description": "User not found"}
             })
-async def delete_user(
-        user_id: int,
-        session: Session = Depends(get_session),
-        auth_user=Depends(get_auth_user)
-):
-    """Удаление пользователя по ID"""
+async def delete_user(user_id: int, session: Session = Depends(get_session)):
+    """Удаление пользователя по ID """
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
@@ -175,26 +167,3 @@ async def delete_user(
     session.commit()
 
     return None
-
-
-@app.get("/users/{user_id}/reviews", summary="Get user reviews")
-async def get_user_reviews(
-        user_id: int,
-        session: Session = Depends(get_session)
-):
-    """Получение всех отзывов пользователя"""
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{REVIEWS_SERVICE_URL}/reviews?user_id={user_id}")
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to get user reviews"
-            )
-        return response.json()
