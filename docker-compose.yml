@@ -1,18 +1,67 @@
-version: '3.8'
-
 services:
-  postgres:
+  films-db:
     image: postgres:13
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: kinopoisk
+      POSTGRES_DB: films
+    ports:
+      - "5433:5432"
+    volumes:
+      - films-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d films" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
+
+  authorization-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auth
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - auth-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d kinopoisk"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d auth"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
+
+  reviews-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: reviews
+    ports:
+      - "5434:5432"
+    volumes:
+      - reviews-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d reviews"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
+
+  users-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: users
+    ports:
+      - "5435:5432"
+    volumes:
+      - users-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d users"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -21,46 +70,49 @@ services:
   films:
     build: ./films
     depends_on:
-      postgres:
+      films-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+      DATABASE_URL: "postgresql://admin:admin@films-db:5432/films"
     ports:
       - "8000:8000"
     restart: on-failure
 
-  auth:
+  authorization:
     build: ./authorization
     depends_on:
-      postgres:
+      authorization-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+      DATABASE_URL: "postgresql://admin:admin@authorization-db:5432/auth"
     ports:
-      - "8001:8001"
+      - "8001:8000"
     restart: on-failure
 
   reviews:
     build: ./reviews
     depends_on:
-      postgres:
+      reviews-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+      DATABASE_URL: "postgresql://admin:admin@reviews-db:5432/reviews"
     ports:
-      - "8002:8002"
+      - "8002:8000"
     restart: on-failure
 
   users:
     build: ./users
     depends_on:
-      postgres:
+      users-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://admin:admin@postgres:5432/kinopoisk"
+      DATABASE_URL: "postgresql://admin:admin@users-db:5432/users"
     ports:
-      - "8003:8003"
+      - "8003:8000"
     restart: on-failure
 
 volumes:
-  postgres_data:
+  auth-data:
+  films-data:
+  reviews-data:
+  users-data:
