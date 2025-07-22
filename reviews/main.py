@@ -15,16 +15,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.on_event("startup")
 def startup():
     wait_for_db()
     logger.info("Review service started")
 
+
 @app.post("/reviews", status_code=status.HTTP_201_CREATED)
 async def create_review(
-    review: Review,
-    token: str,
-    session: Session = Depends(get_session)
+        review: Review,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})
@@ -49,15 +51,17 @@ async def create_review(
         logger.error(f"Error creating review: {e}")
         raise HTTPException(400, detail="Invalid review data")
 
+
 @app.get("/reviews", response_model=List[Review])
 def get_reviews(
-    film_id: Optional[int] = None,
-    session: Session = Depends(get_session)
+        film_id: Optional[int] = None,
+        session: Session = Depends(get_session)
 ):
     query = select(Review)
     if film_id:
         query = query.where(Review.film_id == film_id)
     return session.exec(query).all()
+
 
 @app.get("/reviews/{review_id}", response_model=Review)
 def get_review(review_id: int, session: Session = Depends(get_session)):
@@ -66,11 +70,12 @@ def get_review(review_id: int, session: Session = Depends(get_session)):
         raise HTTPException(404, detail="Review not found")
     return review
 
+
 @app.delete("/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_review(
-    review_id: int,
-    token: str,
-    session: Session = Depends(get_session)
+        review_id: int,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})

@@ -16,7 +16,7 @@ services:
       retries: 5
     restart: on-failure
 
-  authorization-db:
+  auth-db:
     image: postgres:13
     environment:
       POSTGRES_USER: admin
@@ -78,15 +78,15 @@ services:
       - "8000:8000"
     restart: on-failure
 
-  authorization:
+  auth:
     build: ./authorization
     depends_on:
-      authorization-db:
+      auth-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://admin:admin@authorization-db:5432/auth"
+      DATABASE_URL: "postgresql://admin:admin@auth-db:5432/auth"
     ports:
-      - "8001:8000"
+      - "8001:8001"
     restart: on-failure
 
   reviews:
@@ -97,7 +97,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://admin:admin@reviews-db:5432/reviews"
     ports:
-      - "8002:8000"
+      - "8002:8002"
     restart: on-failure
 
   users:
@@ -108,7 +108,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://admin:admin@users-db:5432/users"
     ports:
-      - "8003:8000"
+      - "8003:8003"
     restart: on-failure
 
 volumes:

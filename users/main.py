@@ -15,11 +15,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting application...")
     wait_for_db()
     logger.info("Application startup complete")
+
 
 @app.post("/users",
           response_model=User,
@@ -27,9 +29,9 @@ async def startup_event():
           summary="Create a new user",
           response_description="The created user")
 async def create_user(
-    user: User,
-    token: str,
-    session: Session = Depends(get_session)
+        user: User,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})
@@ -62,6 +64,7 @@ async def create_user(
             detail="Failed to create user"
         )
 
+
 @app.get("/users/{user_id}",
          response_model=User,
          summary="Get user by ID",
@@ -77,14 +80,15 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
         )
     return user
 
+
 @app.get("/users",
          response_model=List[User],
          summary="List all users")
 async def list_users(
-    skip: int = 0,
-    limit: int = 100,
-    is_active: Optional[bool] = None,
-    session: Session = Depends(get_session)
+        skip: int = 0,
+        limit: int = 100,
+        is_active: Optional[bool] = None,
+        session: Session = Depends(get_session)
 ):
     query = select(User)
 
@@ -97,6 +101,7 @@ async def list_users(
 
     return users
 
+
 @app.patch("/users/{user_id}",
            response_model=User,
            summary="Update user partially",
@@ -104,10 +109,10 @@ async def list_users(
                404: {"description": "User not found"}
            })
 async def update_user_partially(
-    user_id: int,
-    updated_data: User,
-    token: str,
-    session: Session = Depends(get_session)
+        user_id: int,
+        updated_data: User,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})
@@ -131,6 +136,7 @@ async def update_user_partially(
 
     return user
 
+
 @app.delete("/users/{user_id}",
             status_code=status.HTTP_204_NO_CONTENT,
             summary="Delete a user",
@@ -138,9 +144,9 @@ async def update_user_partially(
                 404: {"description": "User not found"}
             })
 async def delete_user(
-    user_id: int,
-    token: str,
-    session: Session = Depends(get_session)
+        user_id: int,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})

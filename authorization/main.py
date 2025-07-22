@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Authorization service",
     description="API for user authentication and authorization",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -26,17 +26,21 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting auth service...")
     wait_for_db()
     logger.info("Service ready")
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -44,15 +48,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
 async def get_user_by_email(session: Session, email: str) -> Optional[User]:
     result = session.exec(select(User).where(User.email == email))
     return result.first()
+
 
 async def authenticate_user(session: Session, email: str, password: str) -> Optional[User]:
     user = await get_user_by_email(session, email)
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
+
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
@@ -81,6 +88,7 @@ async def register(
     logger.info(f"New user registered: {user.email}")
     return {"email": user.email, "is_active": user.is_active}
 
+
 @app.post("/token")
 async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
@@ -96,6 +104,7 @@ async def login_for_access_token(
 
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.post("/verify")
 async def verify_token(token: str):

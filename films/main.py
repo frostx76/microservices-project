@@ -16,11 +16,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Launching the movie service...")
     wait_for_db()
     logger.info("The service is ready to work")
+
 
 @app.post("/films",
           response_model=Film,
@@ -28,9 +30,9 @@ async def startup_event():
           summary="Add a new movie",
           response_description="The data of the created movie")
 async def create_film(
-    film: Film,
-    token: str,
-    session: Session = Depends(get_session)
+        film: Film,
+        token: str,
+        session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
         r = await client.post("http://auth-service:8000/verify", json={"token": token})
@@ -51,6 +53,7 @@ async def create_film(
             detail="Couldn't add a movie"
         )
 
+
 @app.get("/films",
          response_model=List[Film],
          summary="Get a list of all movies")
@@ -58,6 +61,7 @@ async def read_films(session: Session = Depends(get_session)):
     films = session.exec(select(Film)).all()
     logger.info(f"A list of films was requested, {len(films)} entries were found")
     return films
+
 
 @app.get("/films/{film_id}",
          response_model=Film,
@@ -75,6 +79,7 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
         )
     logger.info(f"Movie ID requested{film_id}: {film.title}")
     return film
+
 
 @app.put("/films/{film_id}",
          response_model=Film,
@@ -111,6 +116,7 @@ async def update_film(
 
     logger.info(f"Updated movie ID {film_id}: {film.title}")
     return film
+
 
 @app.delete("/films/{film_id}",
             status_code=status.HTTP_204_NO_CONTENT,

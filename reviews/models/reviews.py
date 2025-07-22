@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
 
+
 class Review(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     film_id: int = Field(index=True)
