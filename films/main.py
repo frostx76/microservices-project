@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Header
 from fastapi.responses import JSONResponse
 from sqlmodel import select, Session
 from typing import List
@@ -31,11 +31,15 @@ async def startup_event():
           response_description="The data of the created movie")
 async def create_film(
         film: Film,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
+    token = token.replace("Bearer ", "").strip()
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -90,11 +94,14 @@ async def read_film(film_id: int, session: Session = Depends(get_session)):
 async def update_film(
         film_id: int,
         film_data: Film,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -127,11 +134,14 @@ async def update_film(
             })
 async def delete_film(
         film_id: int,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Form, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import select, Session
 from passlib.context import CryptContext
@@ -91,10 +91,11 @@ async def register(
 
 @app.post("/token")
 async def login_for_access_token(
-        form_data: OAuth2PasswordRequestForm = Depends(),
+        email: str = Form(...),
+        password: str = Form(...),
         session: Session = Depends(get_session)
 ):
-    user = await authenticate_user(session, form_data.username, form_data.password)
+    user = await authenticate_user(session, email, password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -107,8 +108,9 @@ async def login_for_access_token(
 
 
 @app.post("/verify")
-async def verify_token(token: str):
+async def verify_token(token: str = Header(..., alias="Authorization")):
     try:
+        token = token.replace("Bearer ", "").strip()
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return {"email": payload.get("sub")}
     except JWTError:

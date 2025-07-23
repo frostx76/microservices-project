@@ -1,6 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Header
 from sqlmodel import select, Session
 from typing import List, Optional
+
+from starlette.responses import JSONResponse
+
 from models.users import User
 from database.db import wait_for_db, get_session
 import httpx
@@ -30,11 +33,14 @@ async def startup_event():
           response_description="The created user")
 async def create_user(
         user: User,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -111,11 +117,14 @@ async def list_users(
 async def update_user_partially(
         user_id: int,
         updated_data: User,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -145,11 +154,14 @@ async def update_user_partially(
             })
 async def delete_user(
         user_id: int,
-        token: str,
+        token: str = Header(..., alias="Authorization"),
         session: Session = Depends(get_session)
 ):
     async with httpx.AsyncClient() as client:
-        r = await client.post("http://auth-service:8001/verify", json={"token": token})
+        r = await client.post(
+            "http://auth:8001/verify",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -163,4 +175,7 @@ async def delete_user(
     session.delete(user)
     session.commit()
 
-    return None
+    return JSONResponse(
+        content={"detail": "The user was deleted successfully"},
+        status_code=status.HTTP_200_OK
+    )
